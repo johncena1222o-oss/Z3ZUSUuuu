@@ -1,0 +1,424 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Z3ZUSU - THE LAST NIGHT</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Creepster&family=Share+Tech+Mono&display=swap');
+
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050506;color:white;font-family:'Share Tech Mono',monospace}
+#app{
+ width:100%;max-width:520px;height:100dvh;margin:auto;
+ display:flex;flex-direction:column;
+ padding:env(safe-area-inset-top) 15px env(safe-area-inset-bottom);
+ background:radial-gradient(ellipse at 50% 10%,#291019,#080709 75%);
+}
+header{text-align:center;padding:5px 0;flex-shrink:0}
+.logo{font-family:'Creepster',cursive;font-size:clamp(40px,11vw,62px);color:#c20c35;text-shadow:0 0 18px #a00028;letter-spacing:5px;margin:0}
+.sub{font-size:9px;letter-spacing:3px;color:#9b858b}
+#status{display:flex;justify-content:space-between;font-size:10px;color:#bcaeb2;padding:7px 0;border-top:1px solid #481522;border-bottom:1px solid #481522;flex-shrink:0}
+#progress{height:4px;background:#29131b;flex-shrink:0}
+#bar{height:100%;width:0;background:#c21d43;transition:.3s}
+main{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center}
+.screen{display:none;flex-direction:column;gap:9px;min-height:0}
+.screen.active{display:flex;animation:fade .3s}
+@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+h2{text-align:center;color:#e04462;font-size:19px;margin:0}
+.story{text-align:center;font-size:12px;line-height:1.5;color:#e0d7da;margin:0}
+.hint{text-align:center;color:#998b90;font-size:10px;margin:0}
+.photo{
+ width:100%;height:clamp(115px,23vh,190px);
+ object-fit:cover;border:1px solid #772039;border-radius:5px;
+ background:#160b10;box-shadow:0 0 18px #260b13;
+}
+.previewPhoto{height:clamp(145px,30vh,240px)}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+button{
+ min-height:43px;padding:9px 7px;width:100%;
+ background:#170d12;border:1px solid #76203a;border-radius:5px;
+ color:white;font-family:inherit;font-size:11px;
+ cursor:pointer;touch-action:manipulation;
+}
+button:active{background:#86213e;transform:scale(.98)}
+.primary{background:#79172f}
+#endingIcon{text-align:center;font-size:40px}
+#endingNo{text-align:center;color:#ba9ea7;font-size:11px}
+#endingTitle{text-align:center;font-family:'Creepster',cursive;font-size:34px;color:#df3157}
+#endingText{text-align:center;font-size:12px;line-height:1.5}
+#eventBox{padding:10px;border:1px solid #8d2a43;background:#200c13;text-align:center;font-size:12px;line-height:1.5}
+footer{text-align:center;color:#62565a;font-size:8px;padding:6px 0;flex-shrink:0}
+@media(max-height:650px){
+ header{padding:2px 0}
+ .logo{font-size:36px}
+ .sub{font-size:8px}
+ .screen{gap:6px}
+ .photo{height:105px}
+ .previewPhoto{height:125px}
+ button{min-height:36px;padding:7px;font-size:10px}
+ .story{font-size:11px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+<header>
+<h1 class="logo">Z3ZUSU</h1>
+<div class="sub">THE LAST NIGHT · HORROR ADVENTURE</div>
+</header>
+
+<div id="status">
+<span id="chapter">PROLOG</span>
+<span id="count">0 / 6</span>
+</div>
+<div id="progress"><div id="bar"></div></div>
+
+<main>
+
+<section class="screen active" id="intro">
+<img class="photo" src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=900" alt="Dunkler Wald">
+<h2>THE LAST NIGHT</h2>
+<p class="story">03:13 Uhr. Du wachst in einem fremden Haus auf. Dein Handy zeigt eine Nachricht:</p>
+<div id="eventBox">„Du hast sechs Entscheidungen. Nicht jede davon kannst du rückgängig machen.“</div>
+<p class="hint">Deine Geschichte. Deine Entscheidungen. Dein Schicksal.</p>
+<button class="primary" onclick="start()">GESCHICHTE STARTEN</button>
+</section>
+
+<section class="screen" id="game">
+<img class="photo" id="mainPhoto" src="" alt="Aktuelle Spielszene">
+<h2 id="sceneTitle"></h2>
+<p class="story" id="sceneText"></p>
+<div class="choices" id="choices"></div>
+</section>
+
+<section class="screen" id="preview">
+<img class="photo previewPhoto" id="previewPhoto" src="" alt="Vorschau deiner Entscheidung">
+<h2 id="previewTitle"></h2>
+<p class="story" id="previewText"></p>
+<p class="hint" id="previewHint"></p>
+<button class="primary" onclick="continueStory()">WEITER →</button>
+</section>
+
+<section class="screen" id="event">
+<img class="photo" id="eventPhoto" src="" alt="Unerwartetes Ereignis">
+<h2 id="eventTitle">PLÖTZLICH ...</h2>
+<p class="story" id="eventText"></p>
+<button class="primary" onclick="afterEvent()">WEITER</button>
+</section>
+
+<section class="screen" id="ending">
+<div id="endingIcon">🌅</div>
+<div id="endingNo"></div>
+<div id="endingTitle"></div>
+<p id="endingText"></p>
+<p class="hint" id="endingType"></p>
+<button class="primary" onclick="restart()">NEUE GESCHICHTE</button>
+<button onclick="showCollection()">MEHR ÜBER DAS SPIEL</button>
+</section>
+
+<section class="screen" id="collection">
+<img class="photo" src="https://images.unsplash.com/photo-1511497584788-876760111969?w=900" alt="Dunkler Wald">
+<h2>DIE GEHEIMNISSE</h2>
+<p class="story">Sechs Entscheidungen mit jeweils vier Möglichkeiten ergeben 4.096 vollständige Entscheidungskombinationen. Frühzeitige Enden kommen zusätzlich dazu.</p>
+<p class="story" id="collectionText"></p>
+<button class="primary" onclick="restart()">ZURÜCK</button>
+</section>
+
+</main>
+<footer>Z3ZUSU © 2026 · YOUR CHOICES CHANGE EVERYTHING</footer>
+</div>
+
+<script>
+const photos=[
+[
+"https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=900",
+"https://images.unsplash.com/photo-1519608487953-e999c86e7455?w=900",
+"https://images.unsplash.com/photo-1511497584788-876760111969?w=900",
+"https://images.unsplash.com/photo-1511818966892-d7d671e672a2?w=900"
+],
+[
+"https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=900",
+"https://images.unsplash.com/photo-1519608487953-e999c86e7455?w=900",
+"https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=900",
+"https://images.unsplash.com/photo-1511497584788-876760111969?w=900"
+],
+[
+"https://images.unsplash.com/photo-1511818966892-d7d671e672a2?w=900",
+"https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=900",
+"https://images.unsplash.com/photo-1511497584788-876760111969?w=900",
+"https://images.unsplash.com/photo-1519608487953-e999c86e7455?w=900"
+],
+[
+"https://images.unsplash.com/photo-1519608487953-e999c86e7455?w=900",
+"https://images.unsplash.com/photo-1511818966892-d7d671e672a2?w=900",
+"https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=900",
+"https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=900"
+],
+[
+"https://images.unsplash.com/photo-1511497584788-876760111969?w=900",
+"https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=900",
+"https://images.unsplash.com/photo-1511818966892-d7d671e672a2?w=900",
+"https://images.unsplash.com/photo-1519608487953-e999c86e7455?w=900"
+],
+[
+"https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=900",
+"https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=900",
+"https://images.unsplash.com/photo-1519608487953-e999c86e7455?w=900",
+"https://images.unsplash.com/photo-1511497584788-876760111969?w=900"
+]
+];
+
+const chapters=[
+{
+name:"KAPITEL 1 · DAS HAUS",
+title:"DU BIST AUFGEWACHT",
+text:"Du liegst auf dem Boden eines fremden Hauses. Die Haustür steht offen. Draußen hörst du Schritte.",
+choices:[
+["🏃","Aus dem Haus rennen","Du rennst durch den Flur und erreichst den Garten.","Draußen ist es neblig. Hinter dir geht plötzlich ein Fensterlicht an."],
+["🪟","Aus dem Fenster springen","Du kletterst zum Fenster. Der Boden ist weiter unten als gedacht.","Du landest ungünstig. Die Nacht wird plötzlich schwarz."],
+["🚪","Die Tür öffnen","Du gehst durch eine Tür auf der linken Seite.","Ein langer Flur liegt vor dir."],
+["🔦","Nach einer Taschenlampe suchen","Du findest eine alte Taschenlampe auf einem Tisch.","Sie flackert, aber sie funktioniert."]
+]},
+{
+name:"KAPITEL 2 · DER FLUR",
+title:"DIE STIMME",
+text:"Aus einem Zimmer hörst du deinen Namen. Doch du bist sicher, dass niemand hier sein sollte.",
+choices:[
+["📞","Das Telefon benutzen","Du hebst den Hörer ab.","Eine Stimme flüstert: „Geh nicht nach oben.“"],
+["⬆️","Die Treppe hochgehen","Du gehst langsam nach oben.","Eine Tür schließt sich hinter dir."],
+["🚪","In das Zimmer gehen","Du öffnest die Tür vorsichtig.","Ein altes Radio läuft von allein."],
+["🙈","Dich verstecken","Du wartest hinter einem Schrank.","Du hörst Schritte im Flur."]
+]},
+{
+name:"KAPITEL 3 · DAS GEHEIMNIS",
+title:"DIE VERBORGENE NACHRICHT",
+text:"Auf einem Tisch liegt ein Brief. Darauf steht: „Vertraue nicht dem Spiegelbild.“",
+choices:[
+["📜","Den Brief lesen","Du liest die Rückseite des Briefes.","Dort steht ein vierstelliger Code."],
+["🪞","In den Spiegel schauen","Du blickst in den alten Spiegel.","Dein Spiegelbild scheint dir etwas zeigen zu wollen."],
+["🔐","Eine verschlossene Tür öffnen","Du probierst den Code am Schloss.","Das Schloss klickt."],
+["📦","Eine Kiste durchsuchen","Du öffnest eine alte Holzkiste.","Darin liegt ein Foto des Hauses."]
+]},
+{
+name:"KAPITEL 4 · DER BESUCHER",
+title:"JEMAND IST HIER",
+text:"Eine Person steht am Ende des Korridors. Sie trägt einen dunklen Mantel und sagt nichts.",
+choices:[
+["🗣️","Mit der Person sprechen","Du stellst eine Frage.","Sie zeigt auf eine Tür hinter dir."],
+["🏃","Weglaufen","Du rennst in Richtung Treppe.","Eine Tür steht plötzlich offen."],
+["🤝","Der Person folgen","Du folgst ihr in einen Raum.","Dort liegt eine Karte des Hauses."],
+["🔦","Die Person genauer ansehen","Du richtest das Licht auf sie.","Der Korridor ist plötzlich leer."]
+]},
+{
+name:"KAPITEL 5 · DER AUSGANG",
+title:"DIE LETZTE HOFFNUNG",
+text:"Du findest einen Ausgang. Doch neben der Tür hörst du ein leises Klopfen.",
+choices:[
+["🌅","Die Tür öffnen","Du trittst nach draußen.","Der Morgen beginnt. Aber etwas stimmt nicht."],
+["🔒","Die Tür verschließen","Du schiebst einen Riegel vor.","Das Klopfen hört auf."],
+["🕯️","Dem Geräusch folgen","Du gehst in Richtung des Klopfens.","Du entdeckst einen geheimen Raum."],
+["📱","Hilfe rufen","Du versuchst, jemanden zu erreichen.","Dein Handy zeigt plötzlich eine unbekannte Nummer."]
+]},
+{
+name:"KAPITEL 6 · DAS ENDE",
+title:"DIE LETZTE ENTSCHEIDUNG",
+text:"Du stehst vor einem letzten Raum. Auf dem Boden liegt ein Foto von dir. Was machst du?",
+choices:[
+["🚪","Den Raum verlassen","Du gehst zur Tür.","Hinter dir hörst du ein leises Lachen."],
+["📷","Das Foto mitnehmen","Du hebst das Foto auf.","Auf der Rückseite steht ein Datum aus der Zukunft."],
+["🪞","Den Spiegel untersuchen","Du näherst dich dem Spiegel.","Du erkennst, was die ganze Zeit verborgen war."],
+["📖","Das Tagebuch öffnen","Du schlägst die letzte Seite auf.","Dort steht dein Name."]
+]}
+];
+
+let step=0;
+let path=[];
+let chosen=null;
+let flags={flashlight:false,letter:false,key:false,met:false};
+let pendingEvent=null;
+
+function show(id){
+ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+}
+
+function start(){
+ step=0;
+ path=[];
+ flags={flashlight:false,letter:false,key:false,met:false};
+ draw();
+ show('game');
+}
+
+function draw(){
+ const s=chapters[step];
+ document.getElementById('chapter').textContent=s.name;
+ document.getElementById('count').textContent=step+' / 6';
+ document.getElementById('bar').style.width=(step/6*100)+'%';
+ document.getElementById('sceneTitle').textContent=s.title;
+ document.getElementById('sceneText').textContent=s.text;
+ document.getElementById('mainPhoto').src=photos[step][0];
+
+ const area=document.getElementById('choices');
+ area.innerHTML='';
+ s.choices.forEach((c,i)=>{
+  const b=document.createElement('button');
+  b.textContent=c[0]+' '+c[1];
+  b.onclick=()=>choose(i);
+  area.appendChild(b);
+ });
+}
+
+function choose(i){
+ chosen=chapters[step].choices[i];
+ path.push(i);
+ document.getElementById('previewPhoto').src=photos[step][i];
+ document.getElementById('previewTitle').textContent=chosen[1];
+ document.getElementById('previewText').textContent=chosen[2];
+ document.getElementById('previewHint').textContent=chosen[3];
+ show('preview');
+}
+
+function continueStory(){
+ const choice=chosen;
+ const index=path[path.length-1];
+
+ if(step===0 && index===1){
+  endGame("GAME OVER","Du hast den Sprung aus dem Fenster unterschätzt. Deine Geschichte endet hier.", "🌑");
+  return;
+ }
+
+ if(step===0 && index===3)flags.flashlight=true;
+ if(step===2 && index===0)flags.letter=true;
+ if(step===2 && index===2)flags.key=true;
+ if(step===3 && index===2)flags.met=true;
+
+ step++;
+
+ if(step>=chapters.length){
+  finish();
+  return;
+ }
+
+ // Eine frühere Entscheidung kann später eine neue Folge auslösen.
+ if(step===4 && path[0]===1){
+  showEvent(
+   "DIE FOLGE DEINER WAHL",
+   "Du bemerkst, dass du etwas Wichtiges zurückgelassen hast. Der Weg wird schwieriger.",
+   photos[4][2]
+  );
+  return;
+ }
+
+ // Unerwartete, nicht immer gefährliche Ereignisse.
+ if(Math.random()<0.22){
+  const events=[
+   ["DAS LICHT FLACKERT","Alle Lampen gehen für einen Moment aus. Als sie wieder angehen, steht eine Tür offen.",photos[step][1]],
+   ["EINE NEUE NACHRICHT","Auf deinem Handy steht: „Ich sehe dich.“ Du hast keine Ahnung, wer sie geschickt hat.",photos[step][2]],
+   ["DAS GERÄUSCH","Etwas fällt im Raum nebenan um. Danach ist es vollkommen still.",photos[step][3]],
+   ["DIE UHR","Die Uhr bleibt bei 03:13 stehen. Du hast das Gefühl, beobachtet zu werden.",photos[step][0]]
+  ];
+  const e=events[Math.floor(Math.random()*events.length)];
+  showEvent(e[0],e[1],e[2]);
+ }else{
+  draw();
+  show('game');
+ }
+}
+
+function showEvent(title,text,photo){
+ pendingEvent=true;
+ document.getElementById('eventTitle').textContent=title;
+ document.getElementById('eventText').textContent=text;
+ document.getElementById('eventPhoto').src=photo;
+ show('event');
+}
+
+function afterEvent(){
+ pendingEvent=false;
+ draw();
+ show('game');
+}
+
+function makeNumber(){
+ // Base-5-Kodierung mit einer Endmarkierung:
+ // So bekommen auch früh beendete Geschichten eine eigene Nummer.
+ let n=0;
+ path.forEach(x=>n=n*5+x);
+ n=n*5+4;
+ return n+1;
+}
+
+function finish(){
+ const number=makeNumber();
+ const total=path.reduce((a,b)=>a+b,0);
+ let type,title,text,icon;
+
+ if(flags.key && flags.letter){
+  type="GEHEIMES ENDE";
+  title="DIE WAHRHEIT";
+  text="Du findest die Erklärung für das Haus und entdeckst einen verborgenen Ausgang. Der Morgen wartet draußen auf dich.";
+  icon="🔑";
+ }else if(total%4===0){
+  type="DU HAST ÜBERLEBT";
+  title="DER MORGEN";
+  text="Du findest den Weg aus dem Haus. Die Sonne geht auf. Du bist in Sicherheit – doch auf deinem Handy erscheint eine letzte Nachricht.";
+  icon="🌅";
+ }else if(total%4===1){
+  type="DU BIST GEFANGEN";
+  title="DAS HAUS";
+  text="Du findest keinen Ausgang. Die Räume verändern sich immer wieder. Vielleicht kannst du beim nächsten Versuch entkommen.";
+  icon="🏚️";
+ }else if(total%4===2){
+  type="GAME OVER";
+  title="DIE LETZTE NACHT";
+  text="Deine Geschichte endet hier. Die Dunkelheit gewinnt. Du kannst einen anderen Weg ausprobieren.";
+  icon="🌑";
+ }else{
+  type="GEHEIMNISVOLLES ENDE";
+  title="DIE ANDERE SEITE";
+  text="Du entdeckst, dass das Haus ein Geheimnis verbirgt. Du gehst hinaus, aber du weißt nicht, ob wirklich alles vorbei ist.";
+  icon="🪞";
+ }
+
+ document.getElementById('endingIcon').textContent=icon;
+ document.getElementById('endingNo').textContent='GESCHICHTEN-ENDE NR. '+number;
+ document.getElementById('endingTitle').textContent=title;
+ document.getElementById('endingText').textContent=text;
+ document.getElementById('endingType').textContent=type;
+ document.getElementById('chapter').textContent='GESCHICHTE BEENDET';
+ document.getElementById('count').textContent='6 / 6';
+ document.getElementById('bar').style.width='100%';
+ show('ending');
+}
+
+function endGame(title,text,icon){
+ const number=makeNumber();
+ document.getElementById('endingIcon').textContent=icon;
+ document.getElementById('endingNo').textContent='GESCHICHTEN-ENDE NR. '+number;
+ document.getElementById('endingTitle').textContent=title;
+ document.getElementById('endingText').textContent=text;
+ document.getElementById('endingType').textContent='DEINE ENTSCHEIDUNG HAT SOFORTIGE FOLGEN';
+ document.getElementById('chapter').textContent='GESCHICHTE BEENDET';
+ show('ending');
+}
+
+function restart(){
+ document.getElementById('bar').style.width='0';
+ document.getElementById('chapter').textContent='PROLOG';
+ document.getElementById('count').textContent='0 / 6';
+ show('intro');
+}
+
+function showCollection(){
+ document.getElementById('collectionText').textContent=
+ 'Dein letzter Weg hatte die Endnummer '+makeNumber()+'. Probiere andere Kombinationen aus. Auch frühe Enden sind möglich.';
+ show('collection');
+}
+</script>
+</body>
+  </html>
+  
